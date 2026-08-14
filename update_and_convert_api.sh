@@ -29,8 +29,6 @@ function error() {
     exit 1
 }
 
-
-
 # 函数：从upstream拉取代码并解决冲突
 to_pull_from_upstream() {
     info "从 $UPSTREAM_REMOTE/$UPSTREAM_BRANCH 拉取代码"
@@ -84,6 +82,48 @@ to_convert_chrome_to_browser() {
     info "chrome API转换为browser API完成"
 }
 
+# ========== 新增：修复 Firefox 后台脚本兼容性 ==========
+to_fix_firefox_background() {
+    info "开始修复 Firefox 后台脚本兼容性"
+
+    # 1. 删除 background.js 中的 importScripts 调用
+    if [ -f "background.js" ]; then
+        info "删除 background.js 中的 importScripts 语句"
+        # 删除所有以 importScripts 开头的行（兼容参数变动的情况）
+        sed -i '' '/^importScripts/d' background.js
+
+        if grep -q '^importScripts' background.js; then
+            warning "background.js 中仍残留 importScripts 语句，请手动检查"
+        else
+            info "background.js importScripts 删除成功"
+        fi
+    else
+        warning "未找到 background.js，跳过该步骤"
+    fi
+
+    # 2. 更新 manifest.json 的后台脚本配置
+    if [ -f "manifest.json" ]; then
+        info "更新 manifest.json 的 background 脚本列表"
+
+        # 兼容情况A：上游 Chrome 版的 service_worker 字段，直接替换为 scripts 数组
+        sed -i '' 's#"service_worker": "background.js"#"scripts": ["lib/siyuan-storage-defaults.js", "lib/siyuan-api.js", "background.js"]#' manifest.json
+
+        # 兼容情况B：现有单元素 scripts 数组，扩展为三元素
+        sed -i '' 's#"scripts": \["background.js"\]#"scripts": ["lib/siyuan-storage-defaults.js", "lib/siyuan-api.js", "background.js"]#' manifest.json
+
+        if grep -q '"lib/siyuan-storage-defaults.js"' manifest.json; then
+            info "manifest.json 后台脚本配置更新成功"
+        else
+            warning "manifest.json 配置可能未正确生效，请手动检查"
+        fi
+    else
+        error "未找到 manifest.json 文件，无法继续"
+    fi
+
+    info "Firefox 后台脚本兼容性修复完成"
+}
+# ======================================================
+
 # 函数：提交代码到origin
 to_commit_and_push() {
     info "提交代码到 $ORIGIN_REMOTE/$ORIGIN_BRANCH"
@@ -110,11 +150,10 @@ function main() {
         error "当前目录不是git仓库"
     fi
     
-
-    
-    # 执行主要任务
+    # 执行主要任务（新增了兼容性修复步骤）
     to_pull_from_upstream
     to_convert_chrome_to_browser
+    to_fix_firefox_background
     to_commit_and_push
     
     info "所有任务已成功完成！"
