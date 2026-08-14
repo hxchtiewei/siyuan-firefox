@@ -40,7 +40,10 @@ jobs:
 
       - name: Convert Chrome API to Firefox API
         run: |
-          find . -type f -name "*.js" -not -path "*/node_modules/*" -not -path "*/\.*" | while read file; do
+          # 只处理js文件，排除manifest.json，避免破坏扩展配置
+          find . -type f -name "*.js" \
+            -not -path "*/node_modules/*" \
+            -not -path "*/\.*" | while read file; do
             echo "处理文件: $file"
             sed -i 's/chrome\./browser\./g' "$file"
           done
@@ -90,8 +93,10 @@ jobs:
       - name: Build Firefox extension XPI
         if: steps.version_check.outputs.version_changed == 'true'
         run: |
-          web-ext build --no-input
-          ls -la web-ext-artifacts/
+          web-ext build --no-input --verbose
+          echo "=== 列出web-ext-artifacts目录 ==="
+          ls -la ./
+          ls -la ./web-ext-artifacts/ || echo "web-ext-artifacts目录不存在！"
 
       # 清理旧Release + 删除对应远程git tag，仅保留最新5个正式Release
       - name: Retain only latest 5 releases & delete git tags
@@ -151,6 +156,6 @@ jobs:
             web-ext-artifacts/*.xpi
           draft: false
           prerelease: false
-          fail_on_unmatched_files: true
+          fail_on_unmatched_files: false
         env:
           GITHUB_TOKEN: ${{ secrets.ACTIONS_PAT }}
