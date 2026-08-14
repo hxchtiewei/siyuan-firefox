@@ -1,6 +1,6 @@
 let siyuanLangReady = siyuanInitLanguageFromStorage();
 
-chrome.storage.onChanged.addListener((changes, area) => {
+browser.storage.onChanged.addListener((changes, area) => {
     if (area === "sync" && changes.langCode) {
         siyuanLangReady = siyuanLoadLanguageFile(changes.langCode.newValue);
     }
@@ -53,8 +53,8 @@ const eventDispatcher = async (request, sender, sendResponse) => {
 };
 
 document.addEventListener("DOMContentLoaded", function () {
-    chrome.runtime.onMessage.removeListener(eventDispatcher);
-    chrome.runtime.onMessage.addListener(eventDispatcher);
+    browser.runtime.onMessage.removeListener(eventDispatcher);
+    browser.runtime.onMessage.addListener(eventDispatcher);
 });
 
 /**
@@ -852,9 +852,9 @@ async function siyuanGetCloneNode(tempDoc) {
     let items;
     try {
         items = await new Promise((resolve, reject) => {
-            chrome.storage.sync.get(siyuanStorageDefaultsFor(SIYUAN_EXP_STORAGE_KEYS), (result) => {
-                if (chrome.runtime.lastError) {
-                    reject(chrome.runtime.lastError);
+            browser.storage.sync.get(siyuanStorageDefaultsFor(SIYUAN_EXP_STORAGE_KEYS), (result) => {
+                if (browser.runtime.lastError) {
+                    reject(browser.runtime.lastError);
                 } else {
                     resolve(result);
                 }
@@ -1016,7 +1016,7 @@ function fixInvalidNesting(doc) {
 const setMathJaxDataFormula = () => {
     return new Promise((resolve) => {
         const script = document.createElement("script");
-        script.src = chrome.runtime.getURL("lib/mathjax.js");
+        script.src = browser.runtime.getURL("lib/mathjax.js");
         (document.head || document.documentElement).appendChild(script);
 
         const cleanUp = () => {
@@ -1046,7 +1046,7 @@ const siyuanEnsureClipReady = async () => {
 
     let result;
     try {
-        result = await chrome.runtime.sendMessage({
+        result = await browser.runtime.sendMessage({
             func: "check-kernel",
             data: {
                 ip: items.ip,
@@ -1213,7 +1213,7 @@ const siyuanSendUpload = async (tempElement, tabId, srcUrl, type, article, href,
     if (srcList.length > 0) {
         void siyuanShowTipByKey("tip_clipping");
     }
-    chrome.runtime.sendMessage({func: "upload-copy", data: msgJSON});
+    browser.runtime.sendMessage({func: "upload-copy", data: msgJSON});
 };
 
 const copyToClipboard = async (textToCopy) => {
@@ -1244,7 +1244,7 @@ const copyToClipboard = async (textToCopy) => {
 
 const siyuanGetReadability = async (tabId) => {
     try {
-        chrome.i18n.getMessage("tip_clipping");
+        browser.i18n.getMessage("tip_clipping");
     } catch (e) {
         await siyuanLangReady;
         const shouldRefresh = confirm(siyuanGetMessage("tip_first_time"));

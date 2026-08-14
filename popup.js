@@ -96,14 +96,14 @@ function debounce(fn, ms) {
 
 function bindSyncInput(el, storageKey, { normalize, normalizeOnFlush, onSaved } = {}) {
     const saveDraft = () => {
-        chrome.storage.sync.set({ [storageKey]: el.value });
+        browser.storage.sync.set({ [storageKey]: el.value });
     };
     const commit = (normalizeFn) => {
         let value = el.value;
         const fn = normalizeFn || normalize;
         if (fn) value = fn(value);
         if (el.value !== value) el.value = value;
-        const saved = chrome.storage.sync.set({ [storageKey]: value });
+        const saved = browser.storage.sync.set({ [storageKey]: value });
         onSaved?.(value);
         return saved;
     };
@@ -182,7 +182,7 @@ async function reloadPopup(langCode) {
     await flushSyncInputs();
     const scrollTop = document.querySelector(".popup__scroll")?.scrollTop ?? 0;
     await siyuanLoadLanguageFile(langCode);
-    await new Promise((resolve) => chrome.storage.sync.set({ langCode }, resolve));
+    await new Promise((resolve) => browser.storage.sync.set({ langCode }, resolve));
     document.getElementById("mainContainer")?.remove();
     document.getElementById("templateModal")?.remove();
     const items = await siyuanLoadStorageSettings();
@@ -232,13 +232,13 @@ function renderPopup(items) {
         if (sendBtn.disabled) return;
         sendBtn.disabled = true;
         await flushSyncInputs();
-        chrome.tabs.query({ currentWindow: true, active: true }, (tabs) => {
+        browser.tabs.query({ currentWindow: true, active: true }, (tabs) => {
             const tab = tabs[0];
             if (!tab?.id) {
                 sendBtn.disabled = false;
                 return;
             }
-            chrome.tabs.sendMessage(tab.id, { func: "siyuanGetReadability", tabId: tab.id });
+            browser.tabs.sendMessage(tab.id, { func: "siyuanGetReadability", tabId: tab.id });
             setTimeout(() => {
                 sendBtn.disabled = false;
             }, 600);
@@ -323,7 +323,7 @@ function renderPopup(items) {
         const selectedPath = item.getAttribute("data-path");
         const selectedParent = item.getAttribute("data-parent");
         setSearchPathDisplay(searchPathDisplay, item.textContent, selectedNotebook, selectedPath, selectedParent);
-        chrome.storage.sync.set({
+        browser.storage.sync.set({
             searchNotebook: selectedNotebook,
             searchPath: selectedPath,
             searchParentDoc: selectedParent,
@@ -336,7 +336,7 @@ function renderPopup(items) {
     templateNotebook.dataset.selectedId = items.templateNotebook || "";
     templateNotebook.addEventListener("change", () => {
         templateNotebook.dataset.selectedId = templateNotebook.value;
-        chrome.storage.sync.set({ templateNotebook: templateNotebook.value });
+        browser.storage.sync.set({ templateNotebook: templateNotebook.value });
         syncSendBlockFromLocal();
         void updateSavePathPreview();
     });
@@ -356,7 +356,7 @@ function renderPopup(items) {
         savePathSection.querySelector("#searchPathMode").hidden = templateMode;
         savePathSection.querySelector("#templatePathMode").hidden = !templateMode;
         savePathModeAction.textContent = siyuanGetMessage(templateMode ? "use_search_path" : "use_template_path");
-        if (persist) chrome.storage.sync.set({ savePathMode: savePathSection.dataset.mode });
+        if (persist) browser.storage.sync.set({ savePathMode: savePathSection.dataset.mode });
         syncSendBlockFromLocal();
         if (templateMode) {
             void updateNotebookList({ quiet: true });
@@ -368,7 +368,7 @@ function renderPopup(items) {
         applySavePathMode(savePathSection.dataset.mode === "template" ? "search" : "template", true);
     });
     applySavePathMode(savePathSection.dataset.mode);
-    syncInputFlushes.push(() => chrome.storage.sync.set({
+    syncInputFlushes.push(() => browser.storage.sync.set({
         savePathMode: savePathSection.dataset.mode,
         searchNotebook: searchPathDisplay.dataset.notebook || "",
         searchPath: searchPathDisplay.dataset.path || "",
@@ -417,7 +417,7 @@ function renderPopup(items) {
         }
     });
     databaseInput.addEventListener("input", () => {
-        chrome.storage.sync.set({ searchDatabaseKey: databaseInput.value });
+        browser.storage.sync.set({ searchDatabaseKey: databaseInput.value });
         void updateDatabaseSearch();
     });
     databaseOptions.addEventListener("click", (e) => {
@@ -427,7 +427,7 @@ function renderPopup(items) {
         databaseDisplay.dataset.selectedId = item.getAttribute("data-id");
         databaseDisplay.dataset.selectedBlockId = item.getAttribute("data-block-id") || "";
         databaseDisplay.dataset.selectedViewId = item.getAttribute("data-view-id") || "";
-        chrome.storage.sync.set({
+        browser.storage.sync.set({
             selectedDatabaseID: databaseDisplay.dataset.selectedId,
             selectedDatabaseName: item.textContent,
             selectedDatabaseBlockID: databaseDisplay.dataset.selectedBlockId,
@@ -455,7 +455,7 @@ function renderPopup(items) {
     databaseTemplate.addEventListener("change", () => {
         databaseTemplate.dataset.selectedId = databaseTemplate.value;
         databaseTemplate.dataset.configured = "true";
-        chrome.storage.sync.set({
+        browser.storage.sync.set({
             selectedDatabaseTemplateID: databaseTemplate.value,
             selectedDatabaseTemplateConfigured: true,
         });
@@ -477,7 +477,7 @@ function renderPopup(items) {
     savePathSection.insertAdjacentHTML("beforeend", switchRowHtml("assets", "assets"));
     const assets = savePathSection.querySelector("#assets");
     assets.checked = !!items.assets;
-    assets.addEventListener("change", () => chrome.storage.sync.set({ assets: assets.checked }));
+    assets.addEventListener("change", () => browser.storage.sync.set({ assets: assets.checked }));
 
     const expOn = !!items.exp;
 
@@ -486,7 +486,7 @@ function renderPopup(items) {
     exp.checked = expOn;
     exp.addEventListener("change", () => {
         savePathSection.querySelector("#expGroup").classList.toggle("popup__group--hidden", !exp.checked);
-        chrome.storage.sync.set({ exp: exp.checked });
+        browser.storage.sync.set({ exp: exp.checked });
     });
 
     savePathSection.insertAdjacentHTML(
@@ -511,14 +511,14 @@ function renderPopup(items) {
         expGroup.insertAdjacentHTML("beforeend", switchRowHtml(labelKey, id));
         const input = expGroup.querySelector("#" + id);
         input.checked = !!items[id];
-        input.addEventListener("change", () => chrome.storage.sync.set({ [id]: input.checked }));
+        input.addEventListener("change", () => browser.storage.sync.set({ [id]: input.checked }));
     }
 
     savePathSection.insertAdjacentHTML("beforeend", actionRowHtml("template_config", "templateConfig", SETTINGS_SVG));
     // 添加模板配置按钮点击事件
     savePathSection.querySelector("#templateConfig").addEventListener("click", () => {
         // 打开模板配置弹窗
-        chrome.storage.sync.get({ clipTemplate: SIYUAN_DEFAULT_CLIP_TEMPLATE }, (stored) => {
+        browser.storage.sync.get({ clipTemplate: SIYUAN_DEFAULT_CLIP_TEMPLATE }, (stored) => {
             // 打开时预填充当前模板（无则回退默认）
             document.getElementById("templateText").value = stored.clipTemplate || SIYUAN_DEFAULT_CLIP_TEMPLATE;
         });
@@ -582,7 +582,7 @@ function renderPopup(items) {
     settingsSection.insertAdjacentHTML("beforeend", switchRowHtml("show_tip", "showTip"));
     const showTip = settingsSection.querySelector("#showTip");
     showTip.checked = !!items.showTip;
-    showTip.addEventListener("change", () => chrome.storage.sync.set({ showTip: showTip.checked }));
+    showTip.addEventListener("change", () => browser.storage.sync.set({ showTip: showTip.checked }));
 
     settingsSection.insertAdjacentHTML(
         "beforeend",
@@ -631,12 +631,12 @@ function renderPopup(items) {
     templateText.value = items.clipTemplate || "";
     // 添加模板保存按钮事件
     templateModal.querySelector("#saveTemplate").addEventListener("click", () => {
-        chrome.storage.sync.set({ clipTemplate: templateText.value }, closeTemplateModal);
+        browser.storage.sync.set({ clipTemplate: templateText.value }, closeTemplateModal);
     });
     // 添加模板恢复默认按钮事件
     templateModal.querySelector("#restoreTemplate").addEventListener("click", () => {
         templateText.value = SIYUAN_DEFAULT_CLIP_TEMPLATE;
-        chrome.storage.sync.set({ clipTemplate: SIYUAN_DEFAULT_CLIP_TEMPLATE });
+        browser.storage.sync.set({ clipTemplate: SIYUAN_DEFAULT_CLIP_TEMPLATE });
     });
     // 添加模板取消按钮事件
     templateModal.querySelector("#cancelTemplate").addEventListener("click", closeTemplateModal);
@@ -733,7 +733,7 @@ const updateNotebookList = async ({ quiet = false } = {}) => {
             );
         } else {
             setSearchPathDisplay(searchDisplay, "", "", "");
-            chrome.storage.sync.set({ searchNotebook: "", searchPath: "", searchParentDoc: "" });
+            browser.storage.sync.set({ searchNotebook: "", searchPath: "", searchParentDoc: "" });
             syncSendBlockFromLocal();
         }
     }
@@ -889,7 +889,7 @@ const updateDatabaseTemplates = async ({ quiet = false } = {}) => {
         databaseTemplate.value = "";
         databaseTemplate.dataset.selectedId = "";
         databaseTemplate.dataset.configured = "true";
-        await chrome.storage.sync.set({
+        await browser.storage.sync.set({
             selectedDatabaseTemplateID: "",
             selectedDatabaseTemplateConfigured: true,
         });
@@ -906,7 +906,7 @@ const updateDatabaseTemplates = async ({ quiet = false } = {}) => {
         databaseTemplate.value = "";
         databaseTemplate.dataset.selectedId = "";
         databaseTemplate.dataset.configured = "true";
-        await chrome.storage.sync.set({
+        await browser.storage.sync.set({
             selectedDatabaseTemplateID: "",
             selectedDatabaseTemplateConfigured: true,
         });
@@ -928,7 +928,7 @@ const updateDatabaseTemplates = async ({ quiet = false } = {}) => {
     databaseTemplate.disabled = templates.length === 0;
     databaseTemplate.dataset.selectedId = selectedID;
     databaseTemplate.dataset.configured = "true";
-    await chrome.storage.sync.set({
+    await browser.storage.sync.set({
         selectedDatabaseTemplateID: selectedID,
         selectedDatabaseTemplateConfigured: true,
     });
@@ -990,7 +990,7 @@ const updateDatabaseSearch = async ({ quiet = false } = {}) => {
                 if (!databaseDisplay.dataset.selectedBlockId) {
                     databaseDisplay.dataset.selectedBlockId = db.blockID || "";
                     databaseDisplay.dataset.selectedViewId = db.viewID || "";
-                    chrome.storage.sync.set({
+                    browser.storage.sync.set({
                         selectedDatabaseBlockID: databaseDisplay.dataset.selectedBlockId,
                         selectedDatabaseViewID: databaseDisplay.dataset.selectedViewId,
                     });
@@ -1013,7 +1013,7 @@ const updateDatabaseSearch = async ({ quiet = false } = {}) => {
             selectedName = getDatabaseDisplayName(selectedDatabase) || selectedName;
             databaseDisplay.dataset.selectedBlockId = selectedDatabase.blockID || "";
             databaseDisplay.dataset.selectedViewId = selectedDatabase.viewID || "";
-            chrome.storage.sync.set({
+            browser.storage.sync.set({
                 selectedDatabaseBlockID: databaseDisplay.dataset.selectedBlockId,
                 selectedDatabaseViewID: databaseDisplay.dataset.selectedViewId,
             });
